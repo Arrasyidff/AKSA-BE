@@ -21,11 +21,11 @@ class BookController {
   static async getAllBook(req, res) {
     try {
       let data = await Book.findAll({ include: [Author] })
+
       let { params, params2 } = req.params
       let page = +params2
-      let limit = 20
+      let limit = 3
       let startIndex = (page - 1) * limit
-      let endIndex = page * limit
       if (params === undefined) {
         throw { msg: "bad request" }
       } else if (data.length === 0) {
@@ -33,8 +33,11 @@ class BookController {
       } else {
         switch (params) {
           case "Page":
-            let dataPerPage = [...data]
-            dataPerPage = dataPerPage.slice(startIndex, endIndex)
+            let dataPerPage = await Book.findAll({
+              offset: startIndex,
+              limit,
+              include: [Author]
+            })
             if (dataPerPage.length === 0) {
               throw { msg: "not found" }
             } else {
@@ -44,9 +47,6 @@ class BookController {
           case "Show":
             const resultPage = Math.ceil(data.length / limit)
             res.status(200).json({ resultPage })
-            break
-          case "Page":
-            res.status(200).json(data.length)
             break
           case "SortBy":
             function compare(a, b) {
@@ -78,10 +78,10 @@ class BookController {
                 break
               case "DESC":
                 function sortDESC(a, b) {
-                  if (a["createdAt"] < b["createdAt"]) {
+                  if (a["title"] < b["title"]) {
                     return 1
                   }
-                  if (a["createdAt"] > b["createdAt"]) {
+                  if (a["title"] > b["title"]) {
                     return -1
                   }
                   return 0
